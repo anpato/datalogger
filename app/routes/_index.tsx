@@ -1,4 +1,3 @@
-import type { MetaFunction } from '@remix-run/node';
 import { useFetcher } from '@remix-run/react';
 import { action } from './get-file';
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
@@ -26,13 +25,6 @@ import {
 import { HexColorPicker } from 'react-colorful';
 import { cn } from '../utils/cn';
 import icon from '../assets/icon.svg';
-
-export const meta: MetaFunction = () => {
-  return [
-    { title: 'New Remix App' },
-    { name: 'description', content: 'Welcome to Remix!' }
-  ];
-};
 
 export default function Index() {
   const fetcher = useFetcher<typeof action>();
@@ -181,15 +173,18 @@ export default function Index() {
         </Navbar.Collapse>
       </Navbar>
       <div className="w-full my-6">
-        {currFile && (
-          <h3 className="whitespace-nowrap text-wrap text-center text-xl font-semibold dark:text-white mb-2">
-            {currFile}
-          </h3>
-        )}
+        <h3
+          className={cn(
+            currFile ? 'visible' : 'invisible',
+            'whitespace-nowrap text-wrap text-center text-xl font-semibold dark:text-white mb-2'
+          )}
+        >
+          {currFile}
+        </h3>
 
         <h3
           className={cn(
-            !selectedKeys.length && currFile ? 'invisible' : 'visible',
+            !selectedKeys.length ? 'invisible' : 'visible',
             'whitespace-nowrap text-center text-xl font-light dark:text-white mb-2'
           )}
         >

@@ -6,8 +6,14 @@ import {
   ScrollRestoration
 } from '@remix-run/react';
 import styles from './tailwind.css?url';
-import { LinksFunction } from '@remix-run/node';
+import { LinksFunction, MetaFunction } from '@remix-run/node';
 import { Flowbite, ThemeModeScript } from 'flowbite-react';
+
+export const meta: MetaFunction = () => [
+  {
+    title: 'Datalogger'
+  }
+];
 
 export const links: LinksFunction = () => [{ rel: 'stylesheet', href: styles }];
 
