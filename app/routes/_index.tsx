@@ -13,7 +13,6 @@ import {
 import {
   Button,
   Tooltip,
-  Checkbox,
   Dropdown,
   DropdownItem,
   FileInput,
@@ -21,10 +20,12 @@ import {
   Navbar,
   Popover,
   Sidebar,
-  Banner
+  Banner,
+  ToggleSwitch
 } from 'flowbite-react';
 import { HexColorPicker } from 'react-colorful';
 import { cn } from '../utils/cn';
+import icon from '../assets/icon.svg';
 
 export const meta: MetaFunction = () => {
   return [
@@ -127,9 +128,10 @@ export default function Index() {
   return (
     <div className="h-full">
       <Navbar fluid border>
-        <Navbar.Brand>
+        <Navbar.Brand className="flex gap-2">
+          <img src={icon} className="w-10" alt="logo" />
           <h3 className="self-center whitespace-nowrap text-xl font-semibold dark:text-white">
-            Telemetry
+            Datalogger
           </h3>
         </Navbar.Brand>
         <Navbar.Toggle />
@@ -184,11 +186,16 @@ export default function Index() {
             {currFile}
           </h3>
         )}
-        {!selectedKeys.length && currFile ? (
-          <h3 className="whitespace-nowrap text-center text-xl font-light dark:text-white mb-2">
-            Select data points from the menu.
-          </h3>
-        ) : null}
+
+        <h3
+          className={cn(
+            !selectedKeys.length && currFile ? 'invisible' : 'visible',
+            'whitespace-nowrap text-center text-xl font-light dark:text-white mb-2'
+          )}
+        >
+          Select data points from the menu.
+        </h3>
+
         {availableKeys.length ? (
           <div className="flex lg:flex-row flex-col-reverse gap-2 w-full">
             <div className="w-full lg:pl-6">
@@ -229,7 +236,7 @@ export default function Index() {
               </ResponsiveContainer>
             </div>
             <Sidebar className="px-4 w-full flex-1">
-              <Sidebar.Items className="max-h-[300px] lg:max-h-[900px]">
+              <Sidebar.Items className="max-h-[300px] lg:max-h-[800px]">
                 <Sidebar.ItemGroup>
                   {availableKeys.map((key) => (
                     <Sidebar.Item
@@ -237,15 +244,12 @@ export default function Index() {
                       className="flex flex-row justify-center items-start"
                     >
                       <div className="flex gap-2 items-center">
-                        <Checkbox
+                        <ToggleSwitch
+                          color="success"
                           className="cursor-pointer"
                           checked={selectedKeys.includes(key)}
-                          onChange={(e) => {
-                            console.log(e.target.value);
-                            if (
-                              !selectedKeys.includes(key) &&
-                              e.target.value === 'on'
-                            ) {
+                          onChange={(isToggled) => {
+                            if (!selectedKeys.includes(key) && isToggled) {
                               setSelected((prev) => [...prev, key]);
                             } else {
                               setSelected((prev) =>
