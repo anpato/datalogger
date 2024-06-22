@@ -184,11 +184,11 @@ export default function Index() {
             {currFile}
           </h3>
         )}
-        {!selectedKeys.length && (
+        {!selectedKeys.length && !currFile ? (
           <h3 className="whitespace-nowrap text-center text-xl font-light dark:text-white mb-2">
             Select data points from the menu.
           </h3>
-        )}
+        ) : null}
         {availableKeys.length ? (
           <div className="flex lg:flex-row flex-col-reverse gap-2 w-full">
             <div className="w-full lg:pl-6">
