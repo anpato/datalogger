@@ -1,9 +1,10 @@
-import type { Config } from "tailwindcss";
-
+import type { Config } from 'tailwindcss';
+import { content, plugin } from 'flowbite-react/tailwind';
 export default {
-  content: ["./app/**/*.{js,jsx,ts,tsx}"],
+  content: ['./app/**/*.{js,jsx,ts,tsx}', content()],
+  darkMode: 'class',
   theme: {
-    extend: {},
+    extend: {}
   },
-  plugins: [],
+  plugins: [plugin()]
 } satisfies Config;

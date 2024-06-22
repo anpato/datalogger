@@ -14,9 +14,19 @@
     "@remix-run/node": "^2.9.2",
     "@remix-run/react": "^2.9.2",
     "@remix-run/serve": "^2.9.2",
+    "clsx": "^2.1.1",
+    "csv-parse": "^5.5.6",
+    "csvtojson": "^2.0.10",
+    "flowbite-react": "^0.10.1",
+    "install": "^0.13.0",
     "isbot": "^4.1.0",
+    "pnpm": "^9.4.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-colorful": "^5.6.1",
+    "react-dom": "^18.2.0",
+    "react-indexed-db-hook": "^1.0.14",
+    "recharts": "^2.12.7",
+    "tailwind-merge": "^2.3.0"
   },
   "devDependencies": {
     "@remix-run/dev": "^2.9.2",

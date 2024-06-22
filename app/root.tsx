@@ -3,28 +3,33 @@ import {
   Meta,
   Outlet,
   Scripts,
-  ScrollRestoration,
-} from "@remix-run/react";
-import "./tailwind.css";
+  ScrollRestoration
+} from '@remix-run/react';
+import styles from './tailwind.css?url';
+import { LinksFunction } from '@remix-run/node';
+import { Flowbite, ThemeModeScript } from 'flowbite-react';
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export const links: LinksFunction = () => [{ rel: 'stylesheet', href: styles }];
+
+export default function App() {
   return (
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+
         <Meta />
         <Links />
+        <ThemeModeScript suppressHydrationWarning />
       </head>
-      <body>
-        {children}
-        <ScrollRestoration />
-        <Scripts />
+
+      <body suppressHydrationWarning>
+        <Flowbite>
+          <Outlet />
+          <ScrollRestoration />
+          <Scripts />
+        </Flowbite>
       </body>
     </html>
   );
-}
-
-export default function App() {
-  return <Outlet />;
 }
