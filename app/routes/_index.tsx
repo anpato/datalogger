@@ -25,6 +25,12 @@ import {
 import { HexColorPicker } from 'react-colorful';
 import { cn } from '../utils/cn';
 import icon from '../assets/icon.svg';
+import { LocalStorageHelpers } from '../utils/localstorage-helpers';
+
+const strokeSettings = {
+  min: 1,
+  max: 4
+};
 
 export default function Index() {
   const fetcher = useFetcher<typeof action>();
@@ -34,14 +40,13 @@ export default function Index() {
   const [selectedColors, setColor] = useState<{
     [key: string]: string;
   }>({});
+  const [strokeSize, setStrokeSize] = useState<number>(2);
   const [currFile, setFile] = useState<string>('');
   const [isDisabled, toggleDisabled] = useState(true);
   const [availableKeys, setKeys] = useState<string[]>([]);
   const [selectedKeys, setSelected] = useState<string[]>([]);
   const [recentFiles, setRecents] = useState<string[]>(
-    typeof window !== 'undefined'
-      ? JSON.parse(localStorage.getItem('files') ?? '[]') ?? []
-      : []
+    LocalStorageHelpers.getValue('files', '[]') ?? []
   );
   const formRef = useRef<HTMLFormElement | null>(null);
 
@@ -68,35 +73,46 @@ export default function Index() {
       addData(fetchedData.records);
 
       if (
-        typeof window !== 'undefined' &&
-        !JSON.stringify(localStorage.getItem('files'))?.includes(
-          fetchedData.fileName
-        ) &&
-        !localStorage.getItem(fetchedData.fileName)
-      ) {
-        const currFiles =
-          JSON.parse(localStorage.getItem('files') ?? '[]') ?? [];
-
-        localStorage.setItem(
-          'files',
-          JSON.stringify([...currFiles, fetchedData.fileName])
-        );
-        localStorage.setItem(
+        !LocalStorageHelpers.getValue<string[]>(
           fetchedData.fileName,
-          JSON.stringify({
+          '[]'
+        ).includes(fetchedData.fileName)
+      ) {
+        const currFiles = LocalStorageHelpers.getValue<string[]>('files');
+
+        LocalStorageHelpers.setAll<{
+          fileName: string;
+          headers: string[];
+          records: { [key: string]: number | string }[];
+        }>({
+          files: [...currFiles, fetchedData.fileName],
+          [fetchedData.fileName]: {
             fileName: fetchedData.fileName,
             headers: fetchedData.headers.filter(
               (key) => !key.toLowerCase().includes('time')
             ),
             records: fetchedData.records
-          })
-        );
+          }
+        });
+
         if (!recentFiles.includes(fetchedData.fileName)) {
           setRecents((prev) => [...prev, fetchedData.fileName]);
         }
       }
     }
   }, [fetcher.data]);
+
+  const handleDefaultPrefs = (fileName?: string) => {
+    setColor(
+      LocalStorageHelpers.getValue(`${fileName ?? currFile}-colors`, '{}')
+    );
+    console.log(
+      LocalStorageHelpers.getValue(`${fileName ?? currFile}-toggled`, '[]')
+    );
+    setSelected(
+      LocalStorageHelpers.getValue(`${fileName ?? currFile}-toggled`, '[]')
+    );
+  };
 
   const detectChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.value) {
@@ -106,17 +122,73 @@ export default function Index() {
 
   const handleSelectRecent = (fileName: string) => {
     const fileData =
-      typeof window !== 'undefined'
-        ? JSON.parse(localStorage.getItem(fileName) ?? '')
-        : null;
-    if (fileData) {
+      LocalStorageHelpers.getValue<{
+        headers: string[];
+        records: { [key: string]: string | number }[];
+      }>(fileName, '{}') ?? null;
+
+    if (Object.keys(fileData).length) {
       setKeys(fileData.headers);
       addData(fileData.records);
+
       setFile(fileName);
-      setSelected(selectedKeys);
     }
   };
 
+  useEffect(() => {
+    handleDefaultPrefs();
+  }, [currFile]);
+
+  const handleSwitchToggle = (isToggled: boolean, key: string) => {
+    if (!selectedKeys.includes(key) && isToggled) {
+      setSelected((prev) => {
+        const newVals = [...prev, key];
+        LocalStorageHelpers.setValues(`${currFile}-toggled`, newVals);
+        return newVals;
+      });
+    } else {
+      setSelected((prev) => {
+        const newVals = prev.filter((p) => p !== key);
+        LocalStorageHelpers.setValues(`${currFile}-toggled`, newVals);
+        return newVals;
+      });
+    }
+  };
+
+  const handleColorChange = (color: string, key: string) => {
+    setColor((prev) => {
+      const newVals = {
+        ...prev,
+        [key.toString()]: color
+      };
+
+      LocalStorageHelpers.setValues(`${currFile}-colors`, newVals);
+      return newVals;
+    });
+  };
+
+  const changeStrokeSize = (direction: 'up' | 'down') => {
+    switch (direction) {
+      case 'up':
+        setStrokeSize((curr) => {
+          if (curr < strokeSettings.max) {
+            return (curr += 1);
+          }
+          return curr;
+        });
+        break;
+      case 'down': {
+        setStrokeSize((curr) => {
+          if (curr > strokeSettings.min) {
+            return (curr -= 1);
+          }
+          return curr;
+        });
+      }
+    }
+  };
+
+  console.log(selectedKeys.length);
   return (
     <div className="h-full">
       <Navbar fluid border>
@@ -130,7 +202,7 @@ export default function Index() {
         <Navbar.Collapse>
           <div className="flex flex-col-reverse lg:flex-row gap-2 items-center">
             <Dropdown inline label="Recent files">
-              {recentFiles.map((file) => (
+              {recentFiles?.map((file) => (
                 <Dropdown.Item
                   onClick={() => handleSelectRecent(file)}
                   key={file}
@@ -173,23 +245,26 @@ export default function Index() {
         </Navbar.Collapse>
       </Navbar>
       <div className="w-full my-6">
-        <h3
-          className={cn(
-            currFile ? 'visible' : 'invisible',
-            'whitespace-nowrap text-wrap text-center text-xl font-semibold dark:text-white mb-2'
-          )}
-        >
-          {currFile}
-        </h3>
+        {currFile && (
+          <div className="flex flex-col items-center">
+            <code
+              className={cn(
+                currFile ? 'visible' : 'invisible',
+                'whitespace-nowrap text-wrap text-xl font-semibold dark:text-white mb-2'
+              )}
+            >
+              {currFile}
+            </code>
 
-        <h3
-          className={cn(
-            !selectedKeys.length ? 'invisible' : 'visible',
-            'whitespace-nowrap text-center text-xl font-light dark:text-white mb-2'
-          )}
-        >
-          Select data points from the menu.
-        </h3>
+            <h3
+              className={cn([
+                'prose whitespace-nowraptext-md font-light dark:text-white mb-2'
+              ])}
+            >
+              Select data points from the menu.
+            </h3>
+          </div>
+        )}
 
         {availableKeys.length ? (
           <div className="flex lg:flex-row flex-col-reverse gap-2 w-full">
@@ -211,7 +286,7 @@ export default function Index() {
                         : {};
                     return (
                       <Line
-                        strokeWidth={2}
+                        strokeWidth={strokeSize}
                         type="monotone"
                         dataKey={key}
                         key={key}
@@ -230,89 +305,102 @@ export default function Index() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-            <Sidebar className="px-4 w-full flex-1">
-              <Sidebar.Items className="max-h-[300px] lg:max-h-[800px]">
-                <Sidebar.ItemGroup>
-                  {availableKeys.map((key) => (
-                    <Sidebar.Item
-                      key={key}
-                      className="flex flex-row justify-center items-start"
-                    >
-                      <div className="flex gap-2 items-center">
-                        <ToggleSwitch
-                          color="success"
-                          className="cursor-pointer"
-                          checked={selectedKeys.includes(key)}
-                          onChange={(isToggled) => {
-                            if (!selectedKeys.includes(key) && isToggled) {
-                              setSelected((prev) => [...prev, key]);
-                            } else {
-                              setSelected((prev) =>
-                                prev.filter((p) => p !== key)
-                              );
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex items-center gap-2">
+                <Button
+                  disabled={strokeSize === strokeSettings.min}
+                  outline
+                  onClick={() => changeStrokeSize('down')}
+                >
+                  -
+                </Button>
+                <p>
+                  Current line width: <code>{strokeSize}</code>
+                </p>
+                <Button
+                  disabled={strokeSize === strokeSettings.max}
+                  outline
+                  onClick={() => changeStrokeSize('up')}
+                >
+                  +
+                </Button>
+              </div>
+              <Sidebar className="px-4 w-full flex-1">
+                <Sidebar.Items className="max-h-[300px] lg:max-h-[800px]">
+                  <Sidebar.ItemGroup>
+                    {availableKeys.map((key) => (
+                      <Sidebar.Item
+                        key={key}
+                        className="flex flex-row justify-center items-start"
+                      >
+                        <div className="flex gap-2 items-center">
+                          <ToggleSwitch
+                            color="success"
+                            className="cursor-pointer"
+                            checked={selectedKeys.includes(key)}
+                            onChange={(isToggled) =>
+                              handleSwitchToggle(isToggled, key)
                             }
-                          }}
-                        />
-                        <Label className={`mx-2 flex items-center gap-2`}>
-                          {key.length > 25 ? key.substring(0, 20) + '...' : key}
+                          />
+                          <Label className={`mx-2 flex items-center gap-2`}>
+                            {key.length > 25
+                              ? key.substring(0, 20) + '...'
+                              : key}
 
-                          <span>
-                            {' '}
-                            <Tooltip
-                              content="Click to pick a color"
-                              className={cn(
-                                !selectedKeys.includes(key)
-                                  ? 'hidden'
-                                  : 'visible'
-                              )}
-                            >
-                              <Popover
-                                content={
-                                  <HexColorPicker
-                                    color={selectedColors[key] ?? '#3182bd'}
-                                    onChange={(color) =>
-                                      setColor((prev) => ({
-                                        ...prev,
-                                        [key.toString()]: color
-                                      }))
-                                    }
-                                  />
-                                }
-                              >
-                                <div
-                                  style={
-                                    selectedColors && selectedColors[key]
-                                      ? {
-                                          backgroundColor: selectedColors[key],
-                                          opacity: selectedKeys.includes(key)
-                                            ? '1.0'
-                                            : '0.2'
-                                        }
-                                      : {
-                                          backgroundColor: '#3182bd',
-                                          opacity: !selectedKeys.includes(key)
-                                            ? '0.2'
-                                            : '1.0'
-                                        }
+                            <span>
+                              {' '}
+                              <Tooltip content="Click to pick a color">
+                                <Popover
+                                  content={
+                                    <HexColorPicker
+                                      color={selectedColors[key] ?? '#3182bd'}
+                                      onChange={(color) =>
+                                        handleColorChange(color, key)
+                                      }
+                                    />
                                   }
-                                  className={cn(
-                                    'cursor-pointer h-6 w-6 rounded-full',
-                                    !selectedKeys.includes(key)
-                                      ? 'pointer-events-none'
-                                      : 'pointer-events-auto'
-                                  )}
-                                ></div>
-                              </Popover>
-                            </Tooltip>
-                          </span>
-                        </Label>
-                      </div>
-                      <div></div>
-                    </Sidebar.Item>
-                  ))}
-                </Sidebar.ItemGroup>
-              </Sidebar.Items>
-            </Sidebar>
+                                >
+                                  <div
+                                    style={
+                                      selectedColors && selectedColors[key]
+                                        ? {
+                                            backgroundColor:
+                                              selectedColors[key],
+                                            pointerEvents:
+                                              !selectedKeys.includes(key)
+                                                ? 'none'
+                                                : 'auto',
+                                            opacity: selectedKeys.includes(key)
+                                              ? '1.0'
+                                              : '0.2'
+                                          }
+                                        : {
+                                            backgroundColor: '#3182bd',
+                                            pointerEvents:
+                                              !selectedKeys.includes(key)
+                                                ? 'none'
+                                                : 'auto',
+                                            opacity: !selectedKeys.includes(key)
+                                              ? '0.2'
+                                              : '1.0'
+                                          }
+                                    }
+                                    className={cn(
+                                      'cursor-pointer h-6 w-6 rounded-full'
+                                    )}
+                                  ></div>
+                                </Popover>
+                              </Tooltip>
+                            </span>
+                          </Label>
+                        </div>
+                        <div></div>
+                      </Sidebar.Item>
+                    ))}
+                  </Sidebar.ItemGroup>
+                </Sidebar.Items>
+              </Sidebar>
+            </div>
           </div>
         ) : (
           <Banner className="">
