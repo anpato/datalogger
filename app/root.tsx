@@ -7,7 +7,7 @@ import {
 } from '@remix-run/react';
 import styles from './tailwind.css?url';
 import { LinksFunction, MetaFunction } from '@remix-run/node';
-import { Flowbite, ThemeModeScript } from 'flowbite-react';
+import { ThemeModeScript } from 'flowbite-react';
 
 export const meta: MetaFunction = () => [
   {
@@ -26,15 +26,13 @@ export default function App() {
 
         <Meta />
         <Links />
-        <ThemeModeScript suppressHydrationWarning />
+        <ThemeModeScript />
       </head>
 
-      <body suppressHydrationWarning>
-        <Flowbite>
-          <Outlet />
-          <ScrollRestoration />
-          <Scripts />
-        </Flowbite>
+      <body>
+        <Outlet />
+        <ScrollRestoration />
+        <Scripts />
       </body>
     </html>
   );
