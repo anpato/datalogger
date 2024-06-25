@@ -6,8 +6,8 @@ import { LocalStorageHelpers } from '../utils/localstorage-helpers';
 import Chart from '../components/chart';
 import Heading from '../components/heading';
 import Nav from '../components/nav';
-import DataToggle from '../components/data-toggle';
 import DefaultBanner from '../components/default-banner';
+import DataMenu from '../components/data-menu';
 
 // const strokeSettings = {
 //   min: 1,
@@ -147,6 +147,15 @@ export default function Index() {
     });
   };
 
+  const removeAllFiles = () => {
+    LocalStorageHelpers.clearAll();
+    setRecents([]);
+    setSelected([]);
+    setKeys([]);
+    setColor({});
+    setFile('');
+  };
+
   // const changeStrokeSize = (direction: 'up' | 'down') => {
   //   switch (direction) {
   //     case 'up':
@@ -174,6 +183,8 @@ export default function Index() {
         isDisabled={isDisabled}
         handleSelectRecent={handleSelectRecent}
         recentFiles={recentFiles}
+        removeFiles={removeAllFiles}
+        currentFile={currFile}
       >
         <fetcher.Form
           ref={formRef}
@@ -204,21 +215,30 @@ export default function Index() {
         {currFile && <Heading currFile={currFile} />}
 
         {availableKeys.length ? (
-          <div className="flex lg:flex-row flex-col gap-2 w-full">
-            <DataToggle
-              availableKeys={availableKeys}
-              handleColorChange={handleColorChange}
-              selectedColors={selectedColors}
-              selectedKeys={selectedKeys}
-              handleSwitchToggle={handleSwitchToggle}
-            />
+          <>
+            <div className="flex flex-row justify-center gap-2 px-4 mt-4">
+              <div>
+                <DataMenu
+                  availableKeys={availableKeys}
+                  selectedColors={selectedColors}
+                  selectedKeys={selectedKeys}
+                  handleColorChange={handleColorChange}
+                  handleSwitchToggle={handleSwitchToggle}
+                />
+                <p className="prose text-center">
+                  <span className="underline">{selectedKeys.length}</span> data
+                  points selected
+                </p>
+              </div>
+            </div>
+
             <Chart
               chartData={chartData}
               strokeSize={strokeSize}
               selectedKeys={selectedKeys}
               selectedColors={selectedColors}
             />
-          </div>
+          </>
         ) : (
           <DefaultBanner />
         )}
